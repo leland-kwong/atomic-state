@@ -1,17 +1,15 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-type F = Function;
+type WatchKey = string;
 
 type ARef = {
   oldState: unknown;
   state: unknown;
   meta?: unknown;
-  watchersList?: Map<unknown, Function>;
+  watchersList?: Map<WatchKey, Function>;
 };
 
 type WatchFunc = {(
   ref: ARef,
-  key: unknown,
+  key: WatchKey,
   oldState: unknown,
   newState: unknown
 ): void;};
@@ -19,7 +17,9 @@ type WatchFunc = {(
 const emptyMap = new Map();
 
 const atom = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   initialState: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   meta?: any,
 ): ARef =>
   ({
@@ -31,7 +31,7 @@ const atom = (
 function execWatchFunc(
   this: ARef,
   func: WatchFunc,
-  key: unknown,
+  key: WatchKey,
 ): void {
   const {
     oldState,
@@ -68,24 +68,22 @@ const read = (ref: ARef): unknown =>
 const meta = (ref: ARef): unknown =>
   ref.meta;
 
-const addWatch = <Key>(
+const addWatch = (
   ref: ARef,
-  key: Key,
+  key: WatchKey,
   func: WatchFunc,
-): Key => {
-  if (!ref.watchersList) {
-    const r = ref;
-    r.watchersList = new Map();
-  }
+): WatchKey => {
+  const r = ref;
 
-  ref.watchersList.set(key, func);
+  r.watchersList = r.watchersList || new Map();
+  r.watchersList.set(key, func);
 
   return key;
 };
 
-const removeWatch = <Key>(
+const removeWatch = (
   ref: ARef,
-  key: Key,
+  key: WatchKey,
   // whether a watcher was removed
 ): boolean => {
   const { watchersList } = ref;
