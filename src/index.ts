@@ -1,103 +1,95 @@
-type WatchKey = string;
+type WatchKey = string
 
 type ARef = {
-  oldState: unknown;
-  state: unknown;
-  meta?: unknown;
-  watchersList?: Map<WatchKey, Function>;
-};
+  oldState: any
+  state: any
+  meta?: any
+  watchersList?: Map<WatchKey, Function>
+}
 
-type WatchFunc = {(
-  ref: ARef,
-  key: WatchKey,
-  oldState: unknown,
-  newState: unknown
-): void;};
+type WatchFunc = {
+  (
+    ref: ARef,
+    key: WatchKey,
+    oldState: unknown,
+    newState: unknown
+  ): void
+}
 
-const emptyMap = new Map();
+const emptyMap = new Map()
 
 const atom = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   initialState: any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  meta?: any,
-): ARef =>
-  ({
-    oldState: undefined,
-    state: initialState,
-    meta,
-  });
+  meta?: any
+): ARef => ({
+  oldState: undefined,
+  state: initialState,
+  meta
+})
 
 function execWatchFunc(
   this: ARef,
   func: WatchFunc,
-  key: WatchKey,
+  key: WatchKey
 ): void {
-  const {
-    oldState,
-    state: newState,
-  } = this;
+  const { oldState, state: newState } = this
 
-  func(this, key, oldState, newState);
+  func(this, key, oldState, newState)
 }
 
 const notifyWatchers = (ref: ARef): void => {
-  const { watchersList = emptyMap } = ref;
-  watchersList.forEach(execWatchFunc, ref);
-};
+  const { watchersList = emptyMap } = ref
+
+  watchersList.forEach(execWatchFunc, ref)
+}
 
 const swap = <T, Arg>(
   ref: ARef,
-  reducer: {(state: unknown, arg: Arg): T},
-  arg: Arg,
+  reducer: { (state: T, arg: Arg): T },
+  arg: Arg
 ): T => {
-  const r = ref;
-  const { state } = r;
-  const nextState = reducer(state, arg);
+  const r = ref
+  const { state } = r
+  const nextState = reducer(state, arg)
 
-  r.oldState = state;
-  r.state = nextState;
-  notifyWatchers(r);
+  r.oldState = state
+  r.state = nextState
+  notifyWatchers(r)
 
-  return nextState;
-};
+  return nextState
+}
 
-const read = (ref: ARef): unknown =>
-  ref.state;
+const read = <T>(ref: ARef): T => ref.state
 
-const meta = (ref: ARef): unknown =>
-  ref.meta;
+const meta = (ref: ARef): unknown => ref.meta
 
 const addWatch = (
   ref: ARef,
   key: WatchKey,
-  func: WatchFunc,
+  func: WatchFunc
 ): WatchKey => {
-  const r = ref;
+  const r = ref
 
-  r.watchersList = r.watchersList || new Map();
-  r.watchersList.set(key, func);
+  r.watchersList = r.watchersList || new Map()
+  r.watchersList.set(key, func)
 
-  return key;
-};
+  return key
+}
 
 const removeWatch = (
   ref: ARef,
-  key: WatchKey,
+  key: WatchKey
   // whether a watcher was removed
 ): boolean => {
-  const { watchersList } = ref;
-  if (watchersList) {
-    return watchersList.delete(key);
-  }
-  return false;
-};
+  const { watchersList } = ref
 
-export {
-  atom,
-  swap,
-  read,
-  meta,
-  addWatch,
-  removeWatch,
-};
+  if (watchersList) {
+    return watchersList.delete(key)
+  }
+
+  return false
+}
+
+export { atom, swap, read, meta, addWatch, removeWatch }
