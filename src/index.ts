@@ -1,37 +1,35 @@
 type WatchKey = string
 
-type ARef = {
-  oldState: any
-  state: any
-  meta?: any
+type ARef<S = unknown, M = unknown> = {
+  oldState: S
+  state: S
+  meta?: M
   watchersList?: Map<WatchKey, Function>
 }
 
-type WatchFunc = {
+type WatchFunc<Ref extends ARef<any>> = {
   (
-    ref: ARef,
+    ref: Ref,
     key: WatchKey,
-    oldState: unknown,
-    newState: unknown
+    oldState: Ref['oldState'],
+    newState: Ref['state']
   ): void
 }
 
 const emptyMap = new Map()
 
-const atom = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  initialState: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  meta?: any
-): ARef => ({
+const atom = <S, M>(
+  initialState: S,
+  meta?: M
+): ARef<S, M> => ({
   oldState: undefined,
   state: initialState,
   meta
 })
 
 function execWatchFunc(
-  this: ARef,
-  func: WatchFunc,
+  this: ARef<any>,
+  func: WatchFunc<typeof this>,
   key: WatchKey
 ): void {
   const { oldState, state: newState } = this
@@ -39,17 +37,21 @@ function execWatchFunc(
   func(this, key, oldState, newState)
 }
 
-const notifyWatchers = (ref: ARef): void => {
+const notifyWatchers = <Ref extends ARef>(
+  ref: Ref
+): void => {
   const { watchersList = emptyMap } = ref
 
   watchersList.forEach(execWatchFunc, ref)
 }
 
-const swap = <T, Arg>(
-  ref: ARef,
-  reducer: { (state: T, arg: Arg): T },
+const swap = <Ref extends ARef, Arg>(
+  ref: Ref,
+  reducer: {
+    (state: Ref['state'], arg: Arg): Ref['state']
+  },
   arg: Arg
-): T => {
+): Ref['state'] => {
   const r = ref
   const { state } = r
   const nextState = reducer(state, arg)
@@ -61,14 +63,16 @@ const swap = <T, Arg>(
   return nextState
 }
 
-const read = <T>(ref: ARef): T => ref.state
+const read = <Ref extends ARef>(ref: Ref): Ref['state'] =>
+  ref.state
 
-const meta = (ref: ARef): unknown => ref.meta
+const meta = <Ref extends ARef>(ref: Ref): Ref['meta'] =>
+  ref.meta
 
-const addWatch = (
-  ref: ARef,
+const addWatch = <Ref extends ARef>(
+  ref: Ref,
   key: WatchKey,
-  func: WatchFunc
+  func: WatchFunc<Ref>
 ): WatchKey => {
   const r = ref
 
@@ -78,8 +82,8 @@ const addWatch = (
   return key
 }
 
-const removeWatch = (
-  ref: ARef,
+const removeWatch = <Ref extends ARef>(
+  ref: Ref,
   key: WatchKey
   // whether a watcher was removed
 ): boolean => {
